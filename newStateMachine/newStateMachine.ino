@@ -1,9 +1,11 @@
 enum State_enum {SIL, PROBSIL, PROBNOISE, NOISE};
+enum uberState_enum {SILENCE, NOISE};
 
 void state_machine_run(int sensorinfo);
 
 uint8_t state = SIL;
 uint8_t prevState = PROBSIL;
+uint8_t uberState = SILENCE;
 
 unsigned long timeIn;
 unsigned long currentTime;
@@ -26,10 +28,10 @@ void state_machine_run(int sensorInfo)
 
   switch (state)
   {
-    int sumOfData;
-    int counter;
-    int average;
-    
+      int sumOfData;
+      int counter;
+      int average;
+
     case SIL:
       if (prevState != state) {
         timeIn = millis();
@@ -41,7 +43,7 @@ void state_machine_run(int sensorInfo)
       average = sumOfData / counter;
 
       currentTime = millis();
-      
+
       if ((currentTime - timeIn) > setTime) {
         if (average > threshold) {
           state = PROBSIL;
@@ -52,7 +54,7 @@ void state_machine_run(int sensorInfo)
         sumOfData = 0;
         counter = 0;
         average = 0;
-      } else {        
+      } else {
         //STILL COUNTING, WAITING FOR THE TIME LIMIT
       }
       break;
@@ -129,7 +131,7 @@ void state_machine_run(int sensorInfo)
         } else {
           timeIn = millis();
         }
-        
+
         sumOfData = 0;
         counter = 0;
         average = 0;
@@ -144,4 +146,10 @@ int read_Sensor() {
   int sensorValue = analogRead(A0);
   Serial.println((String)"sensorValue = " + sensorValue);
   return sensorValue;
+}
+
+if (state == SIL || state == PROBSIL) {
+  uberState = SILENCE;
+} else {
+  uberState = NOISE;
 }
