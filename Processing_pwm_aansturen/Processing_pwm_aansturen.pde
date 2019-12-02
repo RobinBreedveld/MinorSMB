@@ -5,6 +5,7 @@ import processing.sound.*;
 AudioIn input;
 Amplitude analyzer;
 Arduino arduino;
+Serial myPort;
 
 interface states {int 
                     SIL = 0,
@@ -26,36 +27,39 @@ int setTime = 500;
 int timeIn;
 int currentTime;
 
-int sumOfData;
+float sumOfData;
 int counter;
-int average;
+float average;
 
-Serial myPort;
+int ledNoise = 9;
+int ledSilence = 10;
 
 void setup() {
   size(512, 200);
 
-  arduino = new Arduino(this, "COM3", 57600);
+  arduino = new Arduino(this, "COM4", 57600);
   
-  myPort = new Serial(this, "COM3", 9600);
-
   input = new AudioIn(this, 0);
   input.start();
   
   analyzer = new Amplitude(this);
   analyzer.input(input);
+  
+  arduino.pinMode(ledSilence, Arduino.OUTPUT);
+  arduino.pinMode(ledNoise, Arduino.OUTPUT);
 }
 
 void draw() {
   state_machine_run(read_Sensor());
+  println(state);
   delay(100);
 }
 
-void state_machine_run(int sensorInfo)
+void state_machine_run(float sensorInfo)
 {
-  myPort.write(sensorInfo);
-
-  int threshold = 250;
+  println(sensorInfo);
+  
+  float threshold = 0.20;
 
   switch (state) {
     case states.SIL:      
@@ -164,10 +168,17 @@ void state_machine_run(int sensorInfo)
   } else {
     uberState = uberStates.UNOISE;
   }
+  
+  if (uberState == uberStates.USILENCE) {
+    arduino.digitalWrite(ledSilence, Arduino.HIGH);
+    arduino.digitalWrite(ledNoise, Arduino.LOW);
+  } else {
+    arduino.digitalWrite(ledNoise, Arduino.HIGH);    
+    arduino.digitalWrite(ledSilence, Arduino.LOW);
+  }
 }
 
-int read_Sensor() {
+float read_Sensor() {
   float volume = analyzer.analyze();
-  int sensorValue = int(volume);
-  return sensorValue;
+  return volume;
 }
