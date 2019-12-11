@@ -25,7 +25,8 @@ int state = states.SIL;
 int prevState = states.PROBSIL;
 int uberState = uberStates.USILENCE;
 
-int setTime = 500;
+int setTimeSilence = 1000;
+int setTimeNoise = 500;
 int timeIn;
 int currentTime;
 
@@ -84,7 +85,7 @@ void state_machine_run(float sensorInfo)
 
       currentTime = millis();
 
-      if ((currentTime - timeIn) > setTime) {
+      if ((currentTime - timeIn) > setTimeSilence) {
         if (average > threshold) {
           state = states.PROBSIL;
         } else {
@@ -109,7 +110,7 @@ void state_machine_run(float sensorInfo)
 
       currentTime = millis();
 
-      if ((currentTime - timeIn) > setTime) {
+      if ((currentTime - timeIn) > setTimeSilence) {
         if (average > threshold) {
           state = states.PROBNOISE;
         } else {
@@ -134,7 +135,7 @@ void state_machine_run(float sensorInfo)
 
       currentTime = millis();
 
-      if ((currentTime - timeIn) > setTime) {
+      if ((currentTime - timeIn) > setTimeNoise) {
         if (average > threshold) {
           state = states.NOISE;
         } else {
@@ -159,7 +160,7 @@ void state_machine_run(float sensorInfo)
 
       currentTime = millis();
 
-      if ((currentTime - timeIn) > setTime) {
+      if ((currentTime - timeIn) > setTimeNoise) {
         if (average < threshold) {
           state = states.PROBNOISE;
         } else {
