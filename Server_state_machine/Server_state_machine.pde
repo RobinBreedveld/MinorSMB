@@ -25,8 +25,8 @@ int state = states.SIL;
 int prevState = states.PROBSIL;
 int uberState = uberStates.USILENCE;
 
-int setTimeSilence = 1000;
-int setTimeNoise = 500;
+int setTimeSilence = 1500;
+int setTimeNoise = 300;
 int timeIn;
 int currentTime;
 
@@ -45,7 +45,7 @@ void setup() {
   size(512, 200);
   server = new Server(this, 68);
 
-  arduino = new Arduino(this, "COM3", 57600);
+  //arduino = new Arduino(this, "COM3", 57600);
   
   input = new AudioIn(this, 0);
   input.start();
@@ -53,10 +53,10 @@ void setup() {
   analyzer = new Amplitude(this);
   analyzer.input(input);
   
-  arduino.pinMode(ledServerSilence, Arduino.OUTPUT);
-  arduino.pinMode(ledServerNoise, Arduino.OUTPUT);
-  arduino.pinMode(ledClientNoise, Arduino.OUTPUT);
-  arduino.pinMode(ledClientNoise, Arduino.OUTPUT);
+  //arduino.pinMode(ledServerSilence, Arduino.OUTPUT);
+  //arduino.pinMode(ledServerNoise, Arduino.OUTPUT);
+  //arduino.pinMode(ledClientNoise, Arduino.OUTPUT);
+  //arduino.pinMode(ledClientNoise, Arduino.OUTPUT);
 }
 
 void draw() {
@@ -70,7 +70,7 @@ void state_machine_run(float sensorInfo)
 {
   println(sensorInfo);
   
-  float threshold = 0.20;
+  float threshold = 0.015;
 
   switch (state) {
     case states.SIL:      
@@ -180,13 +180,13 @@ void state_machine_run(float sensorInfo)
     uberState = uberStates.UNOISE;
   }
   
-  if (uberState == uberStates.USILENCE) {
-    arduino.digitalWrite(ledServerSilence, Arduino.HIGH);
-    arduino.digitalWrite(ledServerNoise, Arduino.LOW);
-  } else {
-    arduino.digitalWrite(ledServerNoise, Arduino.HIGH);    
-    arduino.digitalWrite(ledServerSilence, Arduino.LOW);
-  }
+  //if (uberState == uberStates.USILENCE) {
+  //  arduino.digitalWrite(ledServerSilence, Arduino.HIGH);
+  //  arduino.digitalWrite(ledServerNoise, Arduino.LOW);
+  //} else {
+  //  arduino.digitalWrite(ledServerNoise, Arduino.HIGH);    
+  //  arduino.digitalWrite(ledServerSilence, Arduino.LOW);
+  //}
 }
 
 float read_Sensor() {
@@ -200,13 +200,13 @@ void getData(){
     incomingData = client.read(); 
     println("Client says: " + incomingData);
 
-    if (incomingData == 0) {
-      arduino.digitalWrite(ledClientSilence, Arduino.HIGH);
-      arduino.digitalWrite(ledClientNoise, Arduino.LOW);
-    } 
-    else if (incomingData == 1){
-      arduino.digitalWrite(ledClientNoise, Arduino.HIGH);
-      arduino.digitalWrite(ledClientSilence, Arduino.LOW);   
-    }
+    //if (incomingData == 0) {
+    //  arduino.digitalWrite(ledClientSilence, Arduino.HIGH);
+    //  arduino.digitalWrite(ledClientNoise, Arduino.LOW);
+    //} 
+    //else if (incomingData == 1){
+    //  arduino.digitalWrite(ledClientNoise, Arduino.HIGH);
+    //  arduino.digitalWrite(ledClientSilence, Arduino.LOW);   
+    //}
   }
 }
