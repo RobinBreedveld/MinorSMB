@@ -22,7 +22,8 @@ int state = states.SIL;
 int prevState = states.PROBSIL;
 int uberState = uberStates.USILENCE;
 
-int setTime = 500;
+int setTimeSilence = 1000;
+int setTimeNoise = 500;
 int timeIn;
 int currentTime;
 
@@ -36,7 +37,7 @@ void setup() {
   input.start();
   analyzer = new Amplitude(this);
   analyzer.input(input);
-  client = new Client(this, "145.137.19.92", 68);
+  client = new Client(this, "145.137.19.1", 68);
 }
 
 void draw() {
@@ -65,7 +66,7 @@ void state_machine_run(float sensorInfo)
 
       currentTime = millis();
 
-      if ((currentTime - timeIn) > setTime) {
+      if ((currentTime - timeIn) > setTimeSilence) {
         if (average > threshold) {
           state = states.PROBSIL;
         } else {
@@ -88,7 +89,7 @@ void state_machine_run(float sensorInfo)
       average = sumOfData / counter;
       currentTime = millis();
 
-      if ((currentTime - timeIn) > setTime) {
+      if ((currentTime - timeIn) > setTimeSilence) {
         if (average > threshold) {
           state = states.PROBNOISE;
         } else {
@@ -111,7 +112,7 @@ void state_machine_run(float sensorInfo)
       average = sumOfData / counter;
       currentTime = millis();
 
-      if ((currentTime - timeIn) > setTime) {
+      if ((currentTime - timeIn) > setTimeNoise) {
         if (average > threshold) {
           state = states.NOISE;
         } else {
@@ -135,7 +136,7 @@ void state_machine_run(float sensorInfo)
       average = sumOfData / counter;
       currentTime = millis();
 
-      if ((currentTime - timeIn) > setTime) {
+      if ((currentTime - timeIn) > setTimeNoise) {
         if (average < threshold) {
           state = states.PROBNOISE;
         } else {
