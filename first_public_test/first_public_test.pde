@@ -23,14 +23,14 @@ void setup() {
 void draw() {
   button1State = arduino.digitalRead(pinButton1);
   if (button1State == Arduino.HIGH) {
-    arduino.digitalWrite(pinCrane1, 150);
+    arduino.digitalWrite(pinCrane1, 20);
   } else if (button1State == Arduino.LOW) {
     arduino.digitalWrite(pinCrane1, Arduino.LOW);    
   }
   
   button2State = arduino.digitalRead(pinButton2);
   if (button2State == Arduino.HIGH) {
-    arduino.digitalWrite(pinCrane2, 150);
+    arduino.digitalWrite(pinCrane2, 20);
   } else if (button2State == Arduino.LOW) {
     arduino.digitalWrite(pinCrane2, Arduino.LOW);
   }
