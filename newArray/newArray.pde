@@ -7,16 +7,8 @@ import java.util.Iterator;
 AudioIn input;
 Amplitude analyzer;
 
-int setTimeSilence = 1500;
-int setTimeNoise = 300;
-int timeIn;
-int currentTime;
-
-float sumOfData;
-int counter;
-float average;
-
 final Queue<Float> dataQueue = new ArrayDeque(20);
+int arrayLength = 3;
 
 void setup() {
   size(512, 200);
@@ -29,26 +21,36 @@ void setup() {
 }
 
 void draw() {
-  state_machine_run(read_Sensor());
-  println(dataQueue);
+  getAverage();
+  println("dataqueue na: " + dataQueue);
   delay(100);
 }
 
-void state_machine_run(float sensorInfo)
-{
-  println(sensorInfo);
+float getAverage() {
+  float average = 0.0;
   
-  if(dataQueue.size() < 11) {
-    dataQueue.add(sensorInfo);
-  } else if (dataQueue.size() == 11) {
+  while(dataQueue.size() < arrayLength) {
+    float sensorValue = readSensor();
+    
+    println("sensorValue: " + sensorValue);
+
+    dataQueue.add(sensorValue);
+  } 
+  
+  println("dataqueue voor: " + dataQueue);
+
+  if (dataQueue.size() == arrayLength) {
     println("Size voor berekenen van average: " + dataQueue.size());
+    
     float sum = sum(dataQueue);
-    float average = sum/11;
+    average = sum/arrayLength;
     println("average: " + average);
 
     dataQueue.remove();
     println("Size na berekenen van average: " + dataQueue.size());
   }
+  
+  return average;
 }
 
 public static float sum(Queue<Float> q) {
@@ -62,7 +64,7 @@ public static float sum(Queue<Float> q) {
   return sum;
 }
 
-float read_Sensor() {
+float readSensor() {
   float volume = analyzer.analyze();
   return volume;
 }

@@ -4,30 +4,42 @@ import java.util.Iterator;
 import java.lang.Math;
 
 final Queue<Integer> dataQueue = new ArrayDeque(3);
+int arrayLength = 3;
 
 void setup() {
 }
 
 void draw() {
-  state_machine_run(getRandomNumber());
-  println(dataQueue);
+  getAverage();
+  println("dataqueue na: " + dataQueue);
   delay(100);
 }
 
-void state_machine_run(int randomNumber)
-{
-  println("randomNumber: " + randomNumber);
-  if(dataQueue.size() < 3) {
+int getAverage() {
+  int average = 0;
+  
+  while(dataQueue.size() < arrayLength){
+    int randomNumber = getRandomNumber();
+    
+    println("randomNumber: " + randomNumber);
+
     dataQueue.add(randomNumber);
-  } else if (dataQueue.size() == 3) {
+  }
+  
+  println("dataqueue voor: " + dataQueue);
+
+  if (dataQueue.size() == arrayLength) {
     println("Size voor berekenen van average: " + dataQueue.size());
+        
     int sum = sum(dataQueue);
-    int average = sum/3;
+    average = sum/arrayLength;
     println("average: " + average);
 
     dataQueue.remove();
     println("Size na berekenen van average: " + dataQueue.size());
   }
+  
+  return average;
 }
 
 public static int sum(Queue<Integer> q) {
