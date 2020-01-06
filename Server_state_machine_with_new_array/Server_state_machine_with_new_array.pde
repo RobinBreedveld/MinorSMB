@@ -29,7 +29,7 @@ int prevState = states.PROBSIL;
 int uberState = uberStates.USILENCE;
 
 final Queue<Float> dataQueue = new ArrayDeque(20);
-int arrayLength = 3;
+int arrayLength = 75;
 
 int ledServerNoise = 9;
 int ledServerSilence = 10;
@@ -57,7 +57,7 @@ void setup() {
 }
 
 void draw() {
-  getData();
+  getDataFromClient();
   state_machine_run();
   println(uberState);
 }
@@ -141,7 +141,7 @@ void state_machine_run()
 }
 
 float getAverage() {
-  float average = 0.0;
+  float average = 0;
   
   while(dataQueue.size() < arrayLength) {
     float sensorValue = readSensor();
@@ -175,6 +175,7 @@ public static float sum(Queue<Float> q) {
     sum += n;
     q.add(n);
   }
+  
   return sum;
 }
 
@@ -183,7 +184,7 @@ float readSensor() {
   return volume;
 }
 
-void getData(){
+void getDataFromClient(){
   Client client = server.available();
   if (client != null) {
     incomingData = client.read(); 
