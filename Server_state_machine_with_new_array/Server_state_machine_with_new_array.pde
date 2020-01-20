@@ -31,18 +31,16 @@ int uberState = uberStates.USILENCE;
 final Queue<Float> dataQueue = new ArrayDeque(20);
 int arrayLength = 75;
 
-int ledServerNoise = 9;
-int ledServerSilence = 10;
-int ledClientSilence = 5;
-int ledClientNoise = 6;
+int serverInstallation = 10;
+int clientInstallation = 9;
 
 int incomingData = 0;
 
 void setup() {
   size(512, 200);
-  server = new Server(this, 68);
+  server = new Server(this, 4000);
 
-  //arduino = new Arduino(this, "COM3", 57600);
+  arduino = new Arduino(this, "COM3", 57600);
   
   input = new AudioIn(this, 0);
   input.start();
@@ -50,16 +48,14 @@ void setup() {
   analyzer = new Amplitude(this);
   analyzer.input(input);
   
-  //arduino.pinMode(ledServerSilence, Arduino.OUTPUT);
-  //arduino.pinMode(ledServerNoise, Arduino.OUTPUT);
-  //arduino.pinMode(ledClientNoise, Arduino.OUTPUT);
-  //arduino.pinMode(ledClientNoise, Arduino.OUTPUT);
+  arduino.pinMode(serverInstallation, Arduino.OUTPUT);
+  arduino.pinMode(clientInstallation, Arduino.OUTPUT);
 }
 
 void draw() {
   getDataFromClient();
-  state_machine_run();
-  println(uberState);
+  //state_machine_run();
+  println("uberState: " + uberState);
 }
 
 void state_machine_run()
@@ -74,7 +70,7 @@ void state_machine_run()
       }
 
       currentAverage = getAverage();
-      println("currenAverage" + currentAverage);
+      //println("currenAverage" + currentAverage);
 
       if (currentAverage > threshold) {
         state = states.PROBSIL;
@@ -87,7 +83,7 @@ void state_machine_run()
       }
 
       currentAverage = getAverage();
-      println("currenAverage" + currentAverage);
+      //println("currenAverage" + currentAverage);
 
       if (currentAverage > threshold) {
         state = states.PROBNOISE;
@@ -102,7 +98,7 @@ void state_machine_run()
       }
 
       currentAverage = getAverage();
-      println("currenAverage" + currentAverage);
+      //println("currenAverage" + currentAverage);
 
       if (currentAverage > threshold) {
         state = states.NOISE;
@@ -117,7 +113,7 @@ void state_machine_run()
       }
 
       currentAverage = getAverage();
-      println("currenAverage" + currentAverage);
+      //println("currenAverage" + currentAverage);
 
       if (currentAverage < threshold) {
         state = states.PROBNOISE;
@@ -131,13 +127,11 @@ void state_machine_run()
     uberState = uberStates.UNOISE;
   }
   
-  //if (uberState == uberStates.USILENCE) {
-  //  arduino.digitalWrite(ledServerSilence, Arduino.HIGH);
-  //  arduino.digitalWrite(ledServerNoise, Arduino.LOW);
-  //} else {
-  //  arduino.digitalWrite(ledServerNoise, Arduino.HIGH);    
-  //  arduino.digitalWrite(ledServerSilence, Arduino.LOW);
-  //}
+  if (uberState == uberStates.USILENCE) {
+    arduino.digitalWrite(serverInstallation, Arduino.LOW);
+  } else {
+    arduino.digitalWrite(serverInstallation, 3);    
+  }
 }
 
 float getAverage() {
@@ -151,17 +145,17 @@ float getAverage() {
     dataQueue.add(sensorValue);
   } 
   
-  println("dataqueue voor: " + dataQueue);
+  //println("dataqueue voor: " + dataQueue);
 
   if (dataQueue.size() == arrayLength) {
-    println("Size voor berekenen van average: " + dataQueue.size());
+    //println("Size voor berekenen van average: " + dataQueue.size());
     
     float sum = sum(dataQueue);
     average = sum/arrayLength;
     println("average: " + average);
 
     dataQueue.remove();
-    println("Size na berekenen van average: " + dataQueue.size());
+    //println("Size na berekenen van average: " + dataQueue.size());
   }
   
   return average;
@@ -190,13 +184,11 @@ void getDataFromClient(){
     incomingData = client.read(); 
     println("Client says: " + incomingData);
 
-    //if (incomingData == 0) {
-    //  arduino.digitalWrite(ledClientSilence, Arduino.HIGH);
-    //  arduino.digitalWrite(ledClientNoise, Arduino.LOW);
-    //} 
-    //else if (incomingData == 1){
-    //  arduino.digitalWrite(ledClientNoise, Arduino.HIGH);
-    //  arduino.digitalWrite(ledClientSilence, Arduino.LOW);   
-    //}
+    if (incomingData == 0) {
+      arduino.digitalWrite(clientInstallation, Arduino.LOW);
+    } 
+    else if (incomingData == 1){
+      arduino.digitalWrite(clientInstallation, 3);
+    }
   }
 }
