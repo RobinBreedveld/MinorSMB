@@ -25,7 +25,6 @@ interface uberStates {int
                       }
 
 int state = states.SIL;
-int prevState = states.PROBSIL;
 int uberState = uberStates.USILENCE;
 
 final Queue<Float> dataQueue = new ArrayDeque(20);
@@ -64,11 +63,7 @@ void state_machine_run()
   float currentAverage;
 
   switch (state) {
-    case states.SIL:      
-      if (prevState != state) {
-        prevState = state;
-      }
-
+    case states.SIL:
       currentAverage = getAverage();
       //println("currenAverage" + currentAverage);
 
@@ -77,11 +72,7 @@ void state_machine_run()
       } 
       break;
 
-    case states.PROBSIL:     
-      if (prevState != state) {
-        prevState = state;
-      }
-
+    case states.PROBSIL:
       currentAverage = getAverage();
       //println("currenAverage" + currentAverage);
 
@@ -93,10 +84,6 @@ void state_machine_run()
       break;
 
     case states.PROBNOISE:
-      if (prevState != state) {
-        prevState = state;
-      }
-
       currentAverage = getAverage();
       //println("currenAverage" + currentAverage);
 
@@ -108,10 +95,6 @@ void state_machine_run()
       break;
 
     case states.NOISE:
-      if (prevState != state) {
-        prevState = state;
-      }
-
       currentAverage = getAverage();
       //println("currenAverage" + currentAverage);
 
