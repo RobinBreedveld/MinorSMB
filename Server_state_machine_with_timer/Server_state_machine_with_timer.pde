@@ -128,9 +128,11 @@ void activateSystem() {
     }
     
     currentTime = millis();
-
-    arduino.digitalWrite(serverInstallation, 3);
-    if(currentTime - timeIn >= 5000) {
+    
+    if (currentTime - timeIn < 5000) {
+      println("NOT DOING THINGS");
+      arduino.digitalWrite(serverInstallation, 3);
+    } else if(currentTime - timeIn >= 5000) {
       arduino.digitalWrite(serverInstallation, Arduino.LOW);
       println("DOING THINGS");
     }    
