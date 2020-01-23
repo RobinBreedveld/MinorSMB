@@ -26,9 +26,10 @@ int prevState = states.PROBSIL;
 int uberState = uberStates.USILENCE;
 
 final Queue<Float> dataQueue = new ArrayDeque(20);
-int arrayLength = 75;
+int arrayLength = 1000;
 
 float currentAverage;
+int i = 0;
 
 void setup() {
   size(512, 200);
@@ -36,12 +37,12 @@ void setup() {
   input.start();
   analyzer = new Amplitude(this);
   analyzer.input(input);
-  client = new Client(this, "145.137.19.1", 68);
+  client = new Client(this, "145.137.79.217", 4000);
 }
 
 void draw() {
   state_machine_run();
-  println(uberState);
+  println("sensorValue" + readSensor());
   sendData();
 }
 
@@ -151,6 +152,12 @@ float readSensor() {
 }
 
 void sendData(){
+  i++;
+  
+  if(i > 50) {
     String currentAverageString = Float.toString(currentAverage);
+    println("currentAverageString " + currentAverageString);
     client.write(currentAverageString);
+    i = 0;
+  }
 }
