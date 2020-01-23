@@ -34,8 +34,9 @@ int currentTime;
 final Queue<Float> dataQueue = new ArrayDeque(20);
 int arrayLength = 75;
 
-int serverInstallation = 10;
-int clientInstallation = 9;
+int serverInstallation = 9;
+int clientInstallation = 10;
+int potSensor = 0;
 
 int incomingData = 0;
 
@@ -61,7 +62,7 @@ void draw() {
   println("uberState: " + uberState);
 }
 
-void state_machine_run()
+public void state_machine_run()
 {
   float threshold = 0.015;
   float currentAverage;
@@ -117,7 +118,7 @@ void state_machine_run()
   activateSystem();
 }
 
-void activateSystem() {
+public void activateSystem() {
   if (uberState == uberStates.USILENCE) {
     arduino.digitalWrite(serverInstallation, Arduino.LOW);
     prevUberState = uberState;
@@ -130,16 +131,22 @@ void activateSystem() {
     currentTime = millis();
     
     if (currentTime - timeIn < 5000) {
-      println("NOT DOING THINGS");
+      println("NOT WIGGLING");
       arduino.digitalWrite(serverInstallation, 3);
-    } else if(currentTime - timeIn >= 5000) {
-      arduino.digitalWrite(serverInstallation, Arduino.LOW);
-      println("DOING THINGS");
+    } else if(currentTime - timeIn >= 5000) { 
+      println("WIGGLING");
+      int potValue = getPotValue();
+      
+      if (potValue > 750) { 
+        arduino.digitalWrite(serverInstallation, Arduino.LOW);
+      } else if (potValue < 650) {
+        arduino.digitalWrite(serverInstallation, 3);
+      }
     }    
   }
 }
 
-float getAverage() {
+public float getAverage() {
   float average = 0;
   
   while(dataQueue.size() < arrayLength) {
@@ -166,6 +173,14 @@ float getAverage() {
   return average;
 }
 
+public int getPotValue() {
+  int potValue;
+  potValue = arduino.analogRead(potSensor);
+  println("potValue" + potValue); 
+ 
+  return potValue;
+}
+
 public static float sum(Queue<Float> q) {
   float sum = 0;
   
@@ -178,7 +193,7 @@ public static float sum(Queue<Float> q) {
   return sum;
 }
 
-float readSensor() {
+public float readSensor() {
   float volume = analyzer.analyze();
   return volume;
 }
