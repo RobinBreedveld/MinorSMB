@@ -37,19 +37,14 @@ void draw() {
     println("r " + read);
     dingus = arduino.analogRead(potmeter);
     
-    
-      float m = map(dingus, 0, 1048, 400, 800);
+    float m = map(dingus, 0, 1023, 400, 800);
 
     println("m " + m);
     //println("dingus  " + dingus);
-
-
     
     if(read > m){
     arduino.digitalWrite(pinCrane1, Arduino.LOW);    
-
     } else {
-      
     arduino.digitalWrite(pinCrane1, 3);
         arduino.digitalWrite(pinCrane1, 3);
     }

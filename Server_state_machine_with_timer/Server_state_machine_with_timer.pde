@@ -38,6 +38,9 @@ int serverInstallation = 9;
 int clientInstallation = 10;
 int potSensor = 0;
 
+float incomingData;
+
+
 void setup() {
   size(512, 200);
   server = new Server(this, 4000);
@@ -56,8 +59,10 @@ void setup() {
 
 void draw() {
   getDataFromClient();
+  activateBackData();
   state_machine_run();
   println("uberState: " + uberState);
+
 }
 
 public void state_machine_run()
@@ -137,7 +142,7 @@ public void activateSystem() {
       
       if (potValue > 750) { 
         arduino.digitalWrite(serverInstallation, Arduino.LOW);
-      } else if (potValue < 725) {
+      } else if (potValue < 650) {
         arduino.digitalWrite(serverInstallation, 3);
       }
     }    
@@ -199,20 +204,34 @@ public float readSensor() {
 void getDataFromClient(){
   Client client = server.available();
   if (client != null) {
+    
     String incomingDataString;
-    float incomingData;
-
-    incomingDataString = client.readString();
     
+    incomingDataString = client.readString();   
     incomingData = Float.parseFloat(incomingDataString);
-    
     println("Client says: " + incomingData);
+    }
+}
 
-    //if (incomingData == 0) {
-    //  arduino.digitalWrite(clientInstallation, Arduino.LOW);
-    //} 
-    //else if (incomingData == 1){
-    //  arduino.digitalWrite(clientInstallation, 3);
-    //}
-  }
+public void activateBackData() {
+  int read = getPotValue();
+
+  //println("r " + read);
+
+  float mappedData = map(incomingData, 0.001, 0.1, 450, 800);
+
+   println("mappedData " + mappedData);
+  
+   if(read > mappedData){
+      arduino.digitalWrite(clientInstallation, Arduino.LOW);
+    } else {
+      arduino.digitalWrite(clientInstallation, 3);
+    }
+
+   //if (incomingData < 0.015) {
+   //   arduino.digitalWrite(clientInstallation, Arduino.LOW);
+   // } 
+   // else if (incomingData > 0.015){
+   //   arduino.digitalWrite(clientInstallation, 3);
+   // }   
 }
