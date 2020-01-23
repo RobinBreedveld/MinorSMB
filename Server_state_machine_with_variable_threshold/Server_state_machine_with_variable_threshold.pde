@@ -12,20 +12,24 @@ Arduino arduino;
 Serial myPort;
 Server server;
 
-interface states {int 
+interface states {int
                     SIL = 0,
                     PROBSIL = 1,
                     PROBNOISE = 2,
                     NOISE = 3;
                   }
                   
-interface uberStates {int 
+interface uberStates {int
                         USILENCE = 0,
                         UNOISE = 1;
                       }
 
 int state = states.SIL;
 int uberState = uberStates.USILENCE;
+int prevUberState = uberStates.USILENCE;
+
+int timeIn;
+int currentTime;
 
 final Queue<Float> dataQueue = new ArrayDeque(20);
 int arrayLength = 75;
@@ -33,7 +37,7 @@ int arrayLength = 75;
 int serverInstallation = 10;
 int clientInstallation = 9;
 
-int incomingData = 0;
+float incomingData = 0;
 
 void setup() {
   size(512, 200);
@@ -53,17 +57,17 @@ void setup() {
 
 void draw() {
   getDataFromClient();
-  //state_machine_run();
+  state_machine_run();
   println("uberState: " + uberState);
 }
 
 void state_machine_run()
 {
-  float threshold = 0.015;
+  float threshold = incomingData;
   float currentAverage;
 
   switch (state) {
-    case states.SIL:
+    case states.SIL:      
       currentAverage = getAverage();
       //println("currenAverage" + currentAverage);
 
@@ -72,7 +76,7 @@ void state_machine_run()
       } 
       break;
 
-    case states.PROBSIL:
+    case states.PROBSIL:     
       currentAverage = getAverage();
       //println("currenAverage" + currentAverage);
 
@@ -103,17 +107,35 @@ void state_machine_run()
       }
       break;
   }
-  
+ 
   if (state == states.SIL || state == states.PROBSIL) {
     uberState = uberStates.USILENCE;
   } else {
     uberState = uberStates.UNOISE;
   }
   
+  activateSystem();
+}
+
+void activateSystem() {
   if (uberState == uberStates.USILENCE) {
     arduino.digitalWrite(serverInstallation, Arduino.LOW);
-  } else {
-    arduino.digitalWrite(serverInstallation, 3);    
+    prevUberState = uberState;
+} else if (uberState == uberStates.UNOISE) { 
+    if(prevUberState != uberState) {
+      timeIn = millis();
+      prevUberState = uberState;
+    }
+    
+    currentTime = millis();
+    
+    if (currentTime - timeIn < 5000) {
+      println("NOT DOING THINGS");
+      arduino.digitalWrite(serverInstallation, 3);
+    } else if(currentTime - timeIn >= 5000) {
+      arduino.digitalWrite(serverInstallation, Arduino.LOW);
+      println("DOING THINGS");
+    }    
   }
 }
 
@@ -167,11 +189,11 @@ void getDataFromClient(){
     incomingData = client.read(); 
     println("Client says: " + incomingData);
 
-    if (incomingData == 0) {
-      arduino.digitalWrite(clientInstallation, Arduino.LOW);
-    } 
-    else if (incomingData == 1){
-      arduino.digitalWrite(clientInstallation, 3);
-    }
+    //if (incomingData == 0) {
+    //  arduino.digitalWrite(clientInstallation, Arduino.LOW);
+    //} 
+    //else if (incomingData == 1){
+    //  arduino.digitalWrite(clientInstallation, 3);
+    //}
   }
 }

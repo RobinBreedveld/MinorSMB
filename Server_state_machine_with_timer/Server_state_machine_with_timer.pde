@@ -12,28 +12,31 @@ Arduino arduino;
 Serial myPort;
 Server server;
 
-interface states {int 
+interface states {int
                     SIL = 0,
                     PROBSIL = 1,
                     PROBNOISE = 2,
                     NOISE = 3;
                   }
                   
-interface uberStates {int 
+interface uberStates {int
                         USILENCE = 0,
                         UNOISE = 1;
                       }
 
 int state = states.SIL;
 int uberState = uberStates.USILENCE;
+int prevUberState = uberStates.USILENCE;
+
+int timeIn;
+int currentTime;
 
 final Queue<Float> dataQueue = new ArrayDeque(20);
 int arrayLength = 75;
 
-int serverInstallation = 10;
-int clientInstallation = 9;
-
-int incomingData = 0;
+int serverInstallation = 9;
+int clientInstallation = 10;
+int potSensor = 0;
 
 void setup() {
   size(512, 200);
@@ -53,17 +56,17 @@ void setup() {
 
 void draw() {
   getDataFromClient();
-  //state_machine_run();
+  state_machine_run();
   println("uberState: " + uberState);
 }
 
-void state_machine_run()
+public void state_machine_run()
 {
   float threshold = 0.015;
   float currentAverage;
 
   switch (state) {
-    case states.SIL:
+    case states.SIL:      
       currentAverage = getAverage();
       //println("currenAverage" + currentAverage);
 
@@ -72,7 +75,7 @@ void state_machine_run()
       } 
       break;
 
-    case states.PROBSIL:
+    case states.PROBSIL:     
       currentAverage = getAverage();
       //println("currenAverage" + currentAverage);
 
@@ -103,21 +106,45 @@ void state_machine_run()
       }
       break;
   }
-  
+ 
   if (state == states.SIL || state == states.PROBSIL) {
     uberState = uberStates.USILENCE;
   } else {
     uberState = uberStates.UNOISE;
   }
   
+  activateSystem();
+}
+
+public void activateSystem() {
   if (uberState == uberStates.USILENCE) {
     arduino.digitalWrite(serverInstallation, Arduino.LOW);
-  } else {
-    arduino.digitalWrite(serverInstallation, 3);    
+    prevUberState = uberState;
+} else if (uberState == uberStates.UNOISE) { 
+    if(prevUberState != uberState) {
+      timeIn = millis();
+      prevUberState = uberState;
+    }
+    
+    currentTime = millis();
+    
+    if (currentTime - timeIn < 5000) {
+      println("NOT WIGGLING");
+      arduino.digitalWrite(serverInstallation, 3);
+    } else if(currentTime - timeIn >= 3000) { 
+      println("WIGGLING");
+      int potValue = getPotValue();
+      
+      if (potValue > 750) { 
+        arduino.digitalWrite(serverInstallation, Arduino.LOW);
+      } else if (potValue < 725) {
+        arduino.digitalWrite(serverInstallation, 3);
+      }
+    }    
   }
 }
 
-float getAverage() {
+public float getAverage() {
   float average = 0;
   
   while(dataQueue.size() < arrayLength) {
@@ -144,6 +171,14 @@ float getAverage() {
   return average;
 }
 
+public int getPotValue() {
+  int potValue;
+  potValue = arduino.analogRead(potSensor);
+  println("potValue" + potValue); 
+ 
+  return potValue;
+}
+
 public static float sum(Queue<Float> q) {
   float sum = 0;
   
@@ -156,7 +191,7 @@ public static float sum(Queue<Float> q) {
   return sum;
 }
 
-float readSensor() {
+public float readSensor() {
   float volume = analyzer.analyze();
   return volume;
 }
@@ -164,14 +199,20 @@ float readSensor() {
 void getDataFromClient(){
   Client client = server.available();
   if (client != null) {
-    incomingData = client.read(); 
+    String incomingDataString;
+    float incomingData;
+
+    incomingDataString = client.readString();
+    
+    incomingData = Float.parseFloat(incomingDataString);
+    
     println("Client says: " + incomingData);
 
-    if (incomingData == 0) {
-      arduino.digitalWrite(clientInstallation, Arduino.LOW);
-    } 
-    else if (incomingData == 1){
-      arduino.digitalWrite(clientInstallation, 3);
-    }
+    //if (incomingData == 0) {
+    //  arduino.digitalWrite(clientInstallation, Arduino.LOW);
+    //} 
+    //else if (incomingData == 1){
+    //  arduino.digitalWrite(clientInstallation, 3);
+    //}
   }
 }
