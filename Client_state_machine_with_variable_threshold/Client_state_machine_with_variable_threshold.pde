@@ -151,5 +151,6 @@ float readSensor() {
 }
 
 void sendData(){
-    client.write(currentAverage);
+    String currentAverageString = Float.toString(currentAverage);
+    client.write(currentAverageString);
 }

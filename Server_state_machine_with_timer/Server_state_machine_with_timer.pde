@@ -38,8 +38,6 @@ int serverInstallation = 9;
 int clientInstallation = 10;
 int potSensor = 0;
 
-int incomingData = 0;
-
 void setup() {
   size(512, 200);
   server = new Server(this, 4000);
@@ -133,13 +131,13 @@ public void activateSystem() {
     if (currentTime - timeIn < 5000) {
       println("NOT WIGGLING");
       arduino.digitalWrite(serverInstallation, 3);
-    } else if(currentTime - timeIn >= 5000) { 
+    } else if(currentTime - timeIn >= 3000) { 
       println("WIGGLING");
       int potValue = getPotValue();
       
       if (potValue > 750) { 
         arduino.digitalWrite(serverInstallation, Arduino.LOW);
-      } else if (potValue < 650) {
+      } else if (potValue < 725) {
         arduino.digitalWrite(serverInstallation, 3);
       }
     }    
@@ -201,7 +199,13 @@ public float readSensor() {
 void getDataFromClient(){
   Client client = server.available();
   if (client != null) {
-    incomingData = client.read(); 
+    String incomingDataString;
+    float incomingData;
+
+    incomingDataString = client.readString();
+    
+    incomingData = Float.parseFloat(incomingDataString);
+    
     println("Client says: " + incomingData);
 
     //if (incomingData == 0) {
