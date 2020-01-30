@@ -35,7 +35,7 @@ final Queue<Float> dataQueue = new ArrayDeque(20);
 int arrayLength = 75;
 
 int serverInstallation = 9;
-int clientInstallation = 10;
+int clientInstallation = 8;
 int potSensor = 0;
 
 float incomingData;
@@ -140,9 +140,9 @@ public void activateSystem() {
       println("WIGGLING");
       int potValue = getPotValue();
       
-      if (potValue > 750) { 
+      if (potValue > 480) { 
         arduino.digitalWrite(serverInstallation, Arduino.LOW);
-      } else if (potValue < 650) {
+      } else if (potValue < 425) {
         arduino.digitalWrite(serverInstallation, 3);
       }
     }    
@@ -218,11 +218,12 @@ public void activateBackData() {
 
   //println("r " + read);
 
-  float mappedData = map(incomingData, 0.001, 0.1, 450, 800);
+  float mappedData = map(incomingData, 0.001, 0.1, 15, 500);
 
    println("mappedData " + mappedData);
   
    if(read > mappedData){
+     println("test");
       arduino.digitalWrite(clientInstallation, Arduino.LOW);
     } else {
       arduino.digitalWrite(clientInstallation, 3);
