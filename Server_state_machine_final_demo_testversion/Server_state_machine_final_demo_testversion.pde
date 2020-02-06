@@ -37,16 +37,15 @@ int currentTime;
 final Queue<Float> dataQueue = new ArrayDeque(20);
 int arrayLength = 75;
 
-int installation1 = 9;
-int installation2 = 10;
+int installation1 = 10;
 int installation3 = 11;
 int potInstallation1 = 0;
-int potInstallation2 = 1;
 int potInstallation3 = 2;
 int potThreshAdjust = 3;
 
 float incomingData;
 boolean shouldRise = false;
+boolean erbovenGeweest = false;
 
 void setup() {
   size(512, 200);
@@ -60,7 +59,6 @@ void setup() {
   analyzer.input(input);
   
   arduino.pinMode(installation1, Arduino.OUTPUT);
-  arduino.pinMode(installation2, Arduino.OUTPUT);
   arduino.pinMode(installation3, Arduino.OUTPUT);
 }
 
@@ -126,74 +124,80 @@ public void state_machine_run() {
 public void activateServerSystem() {
   if (uberState == uberStates.USILENCE) {
     prevUberState = uberState;
-    int potValue = getPotValue(potInstallation2);
+    int potValue = getPotValue(potInstallation1);
     float average = getAverage();
     
-    stayOnSamePositionFloat(potValue, average, 0.0008, 0.1, 50, 480);
+    stayOnSamePositionServer(potValue, average, 0.0008, 0.1, 25, 490);
   } else if (uberState == uberStates.UNOISE) {
     if(prevUberState != uberState) {
       timeIn = millis();
-      prevUberState = uberState;
+      prevUberState = uberState; 
     }
     
     currentTime = millis();
     
     if (currentTime - timeIn < 2000) {
       println("NOT WIGGLING");
-      int potValue = getPotValue(potInstallation2);
+      int potValue = getPotValue(potInstallation1);
       float average = getAverage();
-      stayOnSamePositionFloat(potValue, average, 0.0008, 0.1, 50, 480);
+      stayOnSamePositionServer(potValue, average, 0.0008, 0.1, 25, 490);
     } else if(currentTime - timeIn >= 2000) { 
       println("WIGGLING");
-      int potValue = getPotValue(potInstallation3);
+      int potValue = getPotValue(potInstallation1);
       int potThreshAdjustValue = getPotValue(potThreshAdjust);
-      float mappedAverage = map(potThreshAdjustValue, 0, 1023, 80, 480);
+      float rawMappedAverage = map(potThreshAdjustValue, 0, 1023, 25, 490);
+      float mappedAverage = rawMappedAverage + 30;
       
-      if (potValue > 450 && shouldRise == true) { 
-        println(" not rising");
-        arduino.digitalWrite(installation2, Arduino.LOW);
-        shouldRise = false;
+      println("potValue: " + potValue);
+      println("mappedValue: " + mappedAverage);
+      println("erbovengeweest" + erbovenGeweest);
+      
+      if (potValue > 485 && erbovenGeweest == false) { 
+        erbovenGeweest = true;
+        println(" gaat naar beneden");
+        arduino.digitalWrite(installation1, Arduino.LOW);
       } else if (potValue < mappedAverage) {
+        erbovenGeweest = false;
         println(" rising");
-        arduino.digitalWrite(installation2, 3);
-        shouldRise = true;
-      } else if (potValue > mappedAverage && shouldRise == true) {
-        println(" jpeop");
-        arduino.digitalWrite(installation2, 3);        //shouldRise = false;
-      } 
-
-        //shouldRise = true;
+        arduino.digitalWrite(installation1, 3);
+      } else if (potValue >= mappedAverage && potValue <= 485 && erbovenGeweest == true) {
+        println(" gaat opnieuw aan");
+        arduino.digitalWrite(installation1, 3);      
+      } else if(potValue > 485 && erbovenGeweest == true) { 
+        println(" 500 + en gaat naar beneden");
+        arduino.digitalWrite(installation1, Arduino.LOW);
       }
-    }    
-  }
-
-
-public void activateBackDataSystem() {
-  int potValue = getPotValue(potInstallation2);
-  int potThreshAdjustValue = getPotValue(potThreshAdjust);
-
-  stayOnSamePositionInt(potValue, potThreshAdjustValue, 0, 1023, 5, 510);
+    }
+  }    
+  erbovenGeweest = false;
 }
 
-public void stayOnSamePositionFloat(int potValue, float source, float lowerInput, float upperInput, int lowerOutput, int upperOutput) {
+public void activateBackDataSystem() {
+  int potValue = getPotValue(potInstallation3);
+  int potThreshAdjustValue = getPotValue(potThreshAdjust);
+
+  stayOnSamePositionBackData(potValue, potThreshAdjustValue, 0, 1023, 25, 490);
+}
+
+public void stayOnSamePositionServer(int potValue, float source, float lowerInput, float upperInput, int lowerOutput, int upperOutput) {
   float mappedAverage = map(source, lowerInput, upperInput, lowerOutput, upperOutput);
-  println("Mapped average: " + mappedAverage);
+  //println("Mapped average: " + mappedAverage);
   
   if(potValue > mappedAverage) {
-    arduino.digitalWrite(installation2, Arduino.LOW);
+    arduino.digitalWrite(installation1, Arduino.LOW);
   } else {
-    arduino.digitalWrite(installation2, 3);
+    arduino.digitalWrite(installation1, 3);
   }   
 }
 
-public void stayOnSamePositionInt(int potValue, float source, float lowerInput, float upperInput, int lowerOutput, int upperOutput) {
+public void stayOnSamePositionBackData(int potValue, float source, float lowerInput, float upperInput, int lowerOutput, int upperOutput) {
   float mappedAverage = map(source, lowerInput, upperInput, lowerOutput, upperOutput);
-  println("Mapped average: " + mappedAverage);
+  //println("Mapped average: " + mappedAverage);
   
   if(potValue > mappedAverage) {
-    arduino.digitalWrite(installation2, Arduino.LOW);
+    arduino.digitalWrite(installation3, Arduino.LOW);
   } else {
-    arduino.digitalWrite(installation2, 3);
+    arduino.digitalWrite(installation3, 3);
   }   
 }
 
@@ -221,7 +225,7 @@ public float getAverage() {
     
     float sum = sum(dataQueue);
     average = sum/arrayLength;
-    println("average: " + average);
+    //println("average: " + average);
 
     dataQueue.remove();
     //println("Size na berekenen van average: " + dataQueue.size());
