@@ -1,3 +1,8 @@
+// Created by Sander Takkenberg & Robin Breedveld for the minor Smart Materials for Behavioural change
+
+// 1 installation for server: 1
+// 1 installation for backdata (client): 3
+
 import processing.serial.*;
 import processing.sound.*;
 import processing.net.*;
@@ -27,8 +32,10 @@ void setup() {
 }
 
 void draw() {
+  // first get the average of the noise level
   getAverage();
   println("sensorValue" + readSensor());
+  // then send the data to the server
   sendData();
 }
 
@@ -79,9 +86,11 @@ float readSensor() {
 void sendData(){
   i++;
   
+  // The variable "i" is instantiated, because the server got multiple values in one time. 
+  // The server could not handle that, so by using the variable "i", there is kind of a delay created
+  // It is needed to send the average as a string, as a float is not allowed to send to the server
   if(i > 50) {
     String currentAverageString = Float.toString(currentAverage);
-    println("currentAverageString " + currentAverageString);
     client.write(currentAverageString);
     i = 0;
   }

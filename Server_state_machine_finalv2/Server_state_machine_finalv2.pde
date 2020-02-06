@@ -1,5 +1,7 @@
-// 2 installations for server: 1 & 3
-// 1 installation for backdata (client): 2
+// Created by Sander Takkenberg & Robin Breedveld for the minor Smart Materials for Behavioural change
+
+// 1 installation for server: 1
+// 1 installation for backdata (client): 3
 
 import processing.serial.*;
 import cc.arduino.*;
@@ -37,6 +39,7 @@ int currentTime;
 final Queue<Float> dataQueue = new ArrayDeque(20);
 int arrayLength = 75;
 
+// installations corresponding to the number that is written on the physical crane
 int installation1 = 10;
 int installation3 = 11;
 int potInstallation1 = 0;
@@ -44,7 +47,7 @@ int potInstallation3 = 2;
 int potThreshAdjust = 3;
 
 float incomingData;
-boolean erbovenGeweest = false;
+boolean beenAbove = false;
 
 void setup() {
   size(512, 200);
@@ -65,14 +68,18 @@ void setup() {
 }
 
 void draw() {
+  // gets data from the client
   getDataFromClient();
+  
+  // activates backdata crane
   activateBackDataSystem();
+  
+  // sets the state of the system and based on that, it activates the server crane
   state_machine_run();
   println("uberState: " + uberState);
 }
 
 public void state_machine_run() {
-  //float threshold = 0.015;
   float threshold = map(incomingData, 0.0008, 0.15, 0.005, 0.05);
   println("threshold: " + threshold);
   float currentAverage;
@@ -114,7 +121,8 @@ public void state_machine_run() {
       }
       break;
   }
- 
+
+  // set an uberState, based on the state
   if (state == states.SIL || state == states.PROBSIL) {
     uberState = uberStates.USILENCE;
   } else {
@@ -130,6 +138,7 @@ public void activateServerSystem() {
     int potValue = getPotValue(potInstallation1);
     float average = getAverage();
     
+    // lets the system be able to show the volume
     stayOnSamePositionServer(potValue, average, 0.0008, 0.1, 25, 490);
   } else if (uberState == uberStates.UNOISE) {
     if(prevUberState != uberState) {
@@ -139,44 +148,50 @@ public void activateServerSystem() {
     
     currentTime = millis();
     
+    // check, based on the amount of time a user makes noise (uberState noise)
     if (currentTime - timeIn < 2000) {
       println("NOT WIGGLING");
       int potValue = getPotValue(potInstallation1);
       float average = getAverage();
+      
+      // lets the system be able to show the volume
       stayOnSamePositionServer(potValue, average, 0.0008, 0.1, 25, 490);
     } else if(currentTime - timeIn >= 2000) { 
       println("WIGGLING");
       int potValue = getPotValue(potInstallation1);
       float rawMappedAverage = map(incomingData, 0.0008, 0.15, 25, 490);
+      // cheatway to make the two cranes almost having the same level
       float mappedAverage = rawMappedAverage + 30;
       
       println("potValue: " + potValue);
       println("mappedValue: " + mappedAverage);
-      println("erbovengeweest" + erbovenGeweest);
+      println("beenAbove" + beenAbove);
       
-      if (potValue > 485 && erbovenGeweest == false) { 
-        erbovenGeweest = true;
+      // making the crane 'wiggling' to show that people are talking too loudly for too long - should be improved
+      if (potValue > 485 && beenAbove == false) { 
+        beenAbove = true;
         println(" gaat naar beneden");
         arduino.digitalWrite(installation1, Arduino.LOW);
       } else if (potValue < mappedAverage) {
-        erbovenGeweest = false;
+        beenAbove = false;
         println(" rising");
         arduino.digitalWrite(installation1, 3);
-      } else if (potValue >= mappedAverage && potValue <= 485 && erbovenGeweest == true) {
+      } else if (potValue >= mappedAverage && potValue <= 485 && beenAbove == true) {
         println(" gaat opnieuw aan");
         arduino.digitalWrite(installation1, 3);      
-      } else if(potValue > 485 && erbovenGeweest == true) { 
+      } else if(potValue > 485 && beenAbove == true) { 
         println(" 500 + en gaat naar beneden");
         arduino.digitalWrite(installation1, Arduino.LOW);
       }
     }
   }    
-  erbovenGeweest = false;
+  beenAbove = false;
 }
 
 public void activateBackDataSystem() {
   int potValue = getPotValue(potInstallation3);
 
+  // lets the system be able to stay in one place
   stayOnSamePositionBackData(potValue, incomingData, 0.0008, 0.15, 25, 490);
 }
 
@@ -204,6 +219,7 @@ public void stayOnSamePositionBackData(int potValue, float source, float lowerIn
 
 public int getPotValue(int sensor) {
   int potValue;
+  
   potValue = arduino.analogRead(sensor); 
   return potValue;
 }
@@ -252,6 +268,7 @@ public float readSensor() {
   return volume;
 }
 
+// gets a string from the client and parses it to a float
 public void getDataFromClient(){
   Client client = server.available();
   if (client != null) {

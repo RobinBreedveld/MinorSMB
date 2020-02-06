@@ -1,5 +1,7 @@
-// 2 installations for server: 1 & 3
-// 1 installation for backdata (client): 2
+// Created by Sander Takkenberg & Robin Breedveld for the minor Smart Materials for Behavioural changes
+
+// 1 installation for server: 1
+// 1 installation for backdata (client): 3
 
 import processing.serial.*;
 import cc.arduino.*;
@@ -33,19 +35,18 @@ int prevUberState = uberStates.USILENCE;
 
 int timeIn;
 int currentTime;
-
+    
 final Queue<Float> dataQueue = new ArrayDeque(20);
 int arrayLength = 75;
 
+// installations corresponding to the number that is written on the physical crane
 int installation1 = 10;
 int installation3 = 11;
 int potInstallation1 = 0;
 int potInstallation3 = 2;
 int potThreshAdjust = 3;
 
-float incomingData;
-boolean shouldRise = false;
-boolean erbovenGeweest = false;
+boolean beenAbove = false;
 
 void setup() {
   size(512, 200);
@@ -63,13 +64,15 @@ void setup() {
 }
 
 void draw() {
+  // activates backdata crane
   activateBackDataSystem();
+  
+  // sets the state of the system and based on that, it activates the server crane
   state_machine_run();
   println("uberState: " + uberState);
 }
 
 public void state_machine_run() {
-  //float threshold = 0.015;
   float threshold = map(getPotValue(potThreshAdjust), 0, 1023, 0.005, 0.05);
   println("threshold: " + threshold);
   float currentAverage;
@@ -112,6 +115,7 @@ public void state_machine_run() {
       break;
   }
  
+  // set an uberState, based on the state
   if (state == states.SIL || state == states.PROBSIL) {
     uberState = uberStates.USILENCE;
   } else {
@@ -127,6 +131,7 @@ public void activateServerSystem() {
     int potValue = getPotValue(potInstallation1);
     float average = getAverage();
     
+    // lets the system be able to show the volume
     stayOnSamePositionServer(potValue, average, 0.0008, 0.1, 25, 490);
   } else if (uberState == uberStates.UNOISE) {
     if(prevUberState != uberState) {
@@ -136,52 +141,47 @@ public void activateServerSystem() {
     
     currentTime = millis();
     
+    // check, based on the amount of time a user makes noise (uberState noise)
     if (currentTime - timeIn < 2000) {
-      println("NOT WIGGLING");
       int potValue = getPotValue(potInstallation1);
       float average = getAverage();
+      
+      // lets the system be able to show the volume
       stayOnSamePositionServer(potValue, average, 0.0008, 0.1, 25, 490);
     } else if(currentTime - timeIn >= 2000) { 
-      println("WIGGLING");
       int potValue = getPotValue(potInstallation1);
       int potThreshAdjustValue = getPotValue(potThreshAdjust);
       float rawMappedAverage = map(potThreshAdjustValue, 0, 1023, 25, 490);
+      // cheatway to make the two cranes almost having the same level
       float mappedAverage = rawMappedAverage + 30;
       
-      println("potValue: " + potValue);
-      println("mappedValue: " + mappedAverage);
-      println("erbovengeweest" + erbovenGeweest);
-      
-      if (potValue > 485 && erbovenGeweest == false) { 
-        erbovenGeweest = true;
-        println(" gaat naar beneden");
+      // making the crane 'wiggling' to show that people are talking too loudly for too long - should be improved
+      if (potValue > 485 && beenAbove == false) { 
+        beenAbove = true;
         arduino.digitalWrite(installation1, Arduino.LOW);
       } else if (potValue < mappedAverage) {
-        erbovenGeweest = false;
-        println(" rising");
+        beenAbove = false;
         arduino.digitalWrite(installation1, 3);
-      } else if (potValue >= mappedAverage && potValue <= 485 && erbovenGeweest == true) {
-        println(" gaat opnieuw aan");
+      } else if (potValue >= mappedAverage && potValue <= 485 && beenAbove == true) {
         arduino.digitalWrite(installation1, 3);      
-      } else if(potValue > 485 && erbovenGeweest == true) { 
-        println(" 500 + en gaat naar beneden");
+      } else if(potValue > 485 && beenAbove == true) { 
         arduino.digitalWrite(installation1, Arduino.LOW);
       }
     }
   }    
-  erbovenGeweest = false;
+  beenAbove = false;
 }
 
 public void activateBackDataSystem() {
   int potValue = getPotValue(potInstallation3);
   int potThreshAdjustValue = getPotValue(potThreshAdjust);
 
+  // lets the system be able to stay in one place
   stayOnSamePositionBackData(potValue, potThreshAdjustValue, 0, 1023, 25, 490);
 }
 
 public void stayOnSamePositionServer(int potValue, float source, float lowerInput, float upperInput, int lowerOutput, int upperOutput) {
   float mappedAverage = map(source, lowerInput, upperInput, lowerOutput, upperOutput);
-  //println("Mapped average: " + mappedAverage);
   
   if(potValue > mappedAverage) {
     arduino.digitalWrite(installation1, Arduino.LOW);
@@ -192,7 +192,6 @@ public void stayOnSamePositionServer(int potValue, float source, float lowerInpu
 
 public void stayOnSamePositionBackData(int potValue, float source, float lowerInput, float upperInput, int lowerOutput, int upperOutput) {
   float mappedAverage = map(source, lowerInput, upperInput, lowerOutput, upperOutput);
-  //println("Mapped average: " + mappedAverage);
   
   if(potValue > mappedAverage) {
     arduino.digitalWrite(installation3, Arduino.LOW);
@@ -203,6 +202,7 @@ public void stayOnSamePositionBackData(int potValue, float source, float lowerIn
 
 public int getPotValue(int sensor) {
   int potValue;
+  
   potValue = arduino.analogRead(sensor); 
   return potValue;
 }
@@ -212,23 +212,14 @@ public float getAverage() {
   
   while(dataQueue.size() < arrayLength) {
     float sensorValue = readSensor();
-    
-    //println("sensorValue: " + sensorValue);
-
     dataQueue.add(sensorValue);
   } 
   
-  //println("dataqueue voor: " + dataQueue);
-
-  if (dataQueue.size() == arrayLength) {
-    //println("Size voor berekenen van average: " + dataQueue.size());
-    
+  if (dataQueue.size() == arrayLength) {  
     float sum = sum(dataQueue);
+    
     average = sum/arrayLength;
-    //println("average: " + average);
-
     dataQueue.remove();
-    //println("Size na berekenen van average: " + dataQueue.size());
   }
   
   return average;
@@ -239,6 +230,7 @@ public static float sum(Queue<Float> q) {
   
   for (int i = 0; i < q.size(); i++) {
     float n = q.remove();
+    
     sum += n;
     q.add(n);
   }
