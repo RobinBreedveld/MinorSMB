@@ -207,10 +207,10 @@ public void stayOnSamePositionServer(int potValue, float source, float lowerInpu
 }
 
 public void stayOnSamePositionBackData(int potValue, float source, float lowerInput, float upperInput, int lowerOutput, int upperOutput) {
-  float mappedAverage = map(source, lowerInput, upperInput, lowerOutput, upperOutput);
+  float mappedIncomingData = map(source, lowerInput, upperInput, lowerOutput, upperOutput);
   //println("Mapped average: " + mappedAverage);
   
-  if(potValue > mappedAverage) {
+  if(potValue > mappedIncomingData) {
     arduino.digitalWrite(installation3, Arduino.LOW);
   } else {
     arduino.digitalWrite(installation3, 3);
